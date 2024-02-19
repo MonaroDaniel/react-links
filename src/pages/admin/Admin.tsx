@@ -1,18 +1,107 @@
-import { useState } from "react"
+import { FormEvent, useEffect, useState } from "react"
 import Header from "../../components/Header/Header"
 import Input from "../../components/Input/Input"
 import { FiTrash } from "react-icons/fi"
+import {
+  addDoc,
+  collection,
+  onSnapshot,
+  query,
+  orderBy,
+  doc,
+  deleteDoc,
+} from 'firebase/firestore'
+import { db } from "../../services/firebaseConnection"
+
+interface LinkProps {
+  id: string;
+  name: string;
+  url: string;
+  bg: string;
+  color: string;
+}
 
 export default () => {
   const [nameInput, setNameInput] = useState('')
   const [urlInput, setUrlInput] = useState('')
   const [textColorInput, setTextColorInput] = useState('#f1f1f1')
   const [backgroundColorInput, setBackgroundColorInput] = useState('#12121212')
+
+  const [links, setLinks] = useState<Array<LinkProps>>([])
+
+  useEffect(() => {
+    const linksRef = collection(db, "links")
+    const queryRef = query(linksRef, orderBy("created", "desc"))
+
+    const unsub = onSnapshot(queryRef, (snapshot) => {
+      let lista: Array<LinkProps> = []
+      snapshot.forEach((doc) => {
+        lista.push({
+          id: doc.id,
+          name: doc.data().name,
+          url: doc.data().url,
+          bg: doc.data().bg,
+          color: doc.data().color
+        })
+      })
+
+      setLinks(lista)
+
+      return () => {
+        unsub()
+      }
+    })
+
+  }, [])
+
+  function handleRegister(e: FormEvent) {
+    e.preventDefault()
+
+    if (nameInput.trim().length <= 0 || urlInput.trim().length <= 0) {
+      alert('Preencha todos os campos')
+      return
+    }
+
+    addDoc(collection(db, "links"), {
+      name: nameInput,
+      url: urlInput,
+      bg: backgroundColorInput,
+      color: textColorInput,
+      created: new Date()
+    }).then((response) => {
+      setNameInput('')
+      setUrlInput('')
+    }).catch((error) => {
+      console.log(error);
+    })
+
+  }
+
+  function renderLinks() {
+    return links.map((item) => (
+      <article key={item.id} className="flex items-center justify-between w-11/12 max-w-xl rounded py-3 px-2 mb-2 select-none"
+        style={{
+          backgroundColor: item.bg,
+          color: item.color
+        }}
+      >
+        <p>{item.name}</p>
+        <div>
+          <button
+            className="border border-dashed p-1 rounded bg-neutral-900"
+          >
+            <FiTrash size={18} color="#FFF" />
+          </button>
+        </div>
+      </article>
+    ))
+  }
+
   return (
     <div className="flex items-center flex-col min-h-screen pb-7 px-2">
       <Header />
 
-      <form className="flex flex-col mt-8 mb-3 w-full max-w-xl">
+      <form className="flex flex-col mt-8 mb-3 w-full max-w-xl" onSubmit={handleRegister}>
         <label className="text-white font-semibold mt-2 mb-2">Nome do Link</label>
         <Input
           placeholder="Digite o nome do link..."
@@ -81,21 +170,7 @@ export default () => {
         Meus Links
       </h2>
 
-      <article className="flex items-center justify-between w-11/12 max-w-xl rounded py-3 px-2 mb-2 select-none"
-      style={{
-        backgroundColor: '#2563eb',
-        color: '#FFF'
-      }}
-      >
-        <p>Canal do Youtubr</p>
-        <div>
-          <button 
-          className="border border-dashed p-1 rounded bg-neutral-900"
-          >
-            <FiTrash size={18} color="#FFF"/>
-          </button>
-        </div>
-      </article>
+      {renderLinks()}
 
     </div>
   )
