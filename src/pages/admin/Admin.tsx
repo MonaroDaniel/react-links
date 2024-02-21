@@ -8,8 +8,6 @@ import {
   onSnapshot,
   query,
   orderBy,
-  doc,
-  deleteDoc,
 } from 'firebase/firestore'
 import { db } from "../../services/firebaseConnection"
 
@@ -68,7 +66,7 @@ export default () => {
       bg: backgroundColorInput,
       color: textColorInput,
       created: new Date()
-    }).then((response) => {
+    }).then((_) => {
       setNameInput('')
       setUrlInput('')
     }).catch((error) => {
