@@ -8,6 +8,8 @@ import {
   onSnapshot,
   query,
   orderBy,
+  deleteDoc,
+  doc,
 } from 'firebase/firestore'
 import { db } from "../../services/firebaseConnection"
 
@@ -72,7 +74,11 @@ export default () => {
     }).catch((error) => {
       console.log(error);
     })
+  }
 
+  async function handleDeleteDoc(id:string) {
+    const docRef = doc(db, "links", id)
+    await deleteDoc(docRef)
   }
 
   function renderLinks() {
@@ -88,7 +94,7 @@ export default () => {
           <button
             className="border border-dashed p-1 rounded bg-neutral-900"
           >
-            <FiTrash size={18} color="#FFF" />
+            <FiTrash onClick={() => handleDeleteDoc(item.id)} size={18} color="#FFF" />
           </button>
         </div>
       </article>
